@@ -45,6 +45,8 @@ RUN apt-get install -y \
 
 WORKDIR /root/
 
+ENV NAMESPACE=demo
+
 # Setup a password
 RUN mkdir ~/.vnc && x11vnc -storepasswd idbehold ~/.vnc/passwd
 

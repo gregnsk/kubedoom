@@ -1,101 +1,27 @@
 # Kube DOOM
-## Kill Kubernetes pods using Id's Doom!
+## Kill Kubernetes pvcs using Id's Doom!
 
-The next level of chaos engineering is here! Kill pods inside your Kubernetes
+The next level of chaos engineering is here! Kill pvcs, pods or namespaces inside your Kubernetes
 cluster by shooting them in Doom!
 
-This is a fork of the excellent
-[gideonred/dockerdoomd](https://github.com/gideonred/dockerdoomd) using a
-slightly modified Doom, forked from https://github.com/gideonred/dockerdoom,
-which was forked from psdoom.
+This code is built as an extension of [storax/kubedoom](https://github.com/storax/kubedoom) which in turn 
+is a fork of the excellent [gideonred/dockerdoomd](https://github.com/gideonred/dockerdoomd) using a
+slightly modified Doom, which was forked from psdoom.
 
-![DOOM](assets/doom.jpg)
+![DOOM](assets/doom_pvc_100.jpg)
 
-## Running Locally
 
-In order to run locally you will need to
-
-1. Run the kubedoom container
-2. Attach a VNC client to the appropriate port (5901)
-
-### With Docker
-
-Run `storaxdev/kubedoom:0.5.0` with docker locally:
-
+### Building kubedoom container image
 ```console
-$ docker run -p5901:5900 \
-  --net=host \
-  -v ~/.kube:/root/.kube \
-  --rm -it --name kubedoom \
-  storaxdev/kubedoom:0.5.0
-```
-
-Optionally, if you set `-e NAMESPACE={your namespace}` you can limit Kubedoom to deleting pods in a single namespace
-
-### With Podman
-
-Run `storaxdev/kubedoom:0.5.0` with podman locally:
-
-```console
-$ podman run -it -p5901:5900/tcp \
-  -v ~/.kube:/tmp/.kube --security-opt label=disable \
-  --env "KUBECONFIG=/tmp/.kube/config" --name kubedoom
-  storaxdev/kubedoom:0.5.0
-```
-
-### Attaching a VNC Client
-
-Now start a VNC viewer and connect to `localhost:5901`. The password is `idbehold`:
-```console
-$ vncviewer viewer localhost:5901
-```
-You should now see DOOM! Now if you want to get the job done quickly enter the
-cheat `idspispopd` and walk through the wall on your right. You should be
-greeted by your pods as little pink monsters. Press `CTRL` to fire. If the
-pistol is not your thing, cheat with `idkfa` and press `5` for a nice surprise.
-Pause the game with `ESC`.
-
-### Killing namespaces
-
-Kubedoom now also supports killing namespaces [in case you have too many of
-them](https://github.com/storax/kubedoom/issues/5). Simply set the `-mode` flag
-to `namespaces`:
-
-```console
-$ docker run -p5901:5900 \
-  --net=host \
-  -v ~/.kube:/root/.kube \
-  --rm -it --name kubedoom \
-  storaxdev/kubedoom:0.5.0 \
-  -mode namespaces
+$ git clone git@github.com:gregnsk/kubedoom.git
+$ cd kubedoom
+$ docker build -t pvckubedoom:0.1.0 .
 ```
 
 ### Running Kubedoom inside Kubernetes
 
-See the example in the `/manifest` directory. You can quickly test it using
-[kind](https://github.com/kubernetes-sigs/kind). Create a cluster with the
-example config from this repository:
 
-```console
-$ kind create cluster --config kind-config.yaml
-Creating cluster "kind" ...
- ✓ Ensuring node image (kindest/node:v1.19.1) 🖼
- ✓ Preparing nodes 📦 📦
- ✓ Writing configuration 📜
- ✓ Starting control-plane 🕹️
- ✓ Installing CNI 🔌
- ✓ Installing StorageClass 💾
- ✓ Joining worker nodes 🚜
-Set kubectl context to "kind-kind"
-You can now use your cluster with:
-
-kubectl cluster-info --context kind-kind
-
-Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
-```
-
-This will spin up a 2 node cluster inside docker, with port 5900 exposed from
-the worker node. Then run kubedoom inside the cluster by applying the manifest
+Run kubedoom inside the cluster by applying the manifest
 provided in this repository:
 
 ```console
@@ -106,10 +32,26 @@ serviceaccount/kubedoom created
 clusterrolebinding.rbac.authorization.k8s.io/kubedoom created
 ```
 
-To connect run:
+By default, this version of Kubedoom will work with PVCs in "demo" namespace.
+For every PVC in this namespace it will spawn a demon. When a demon gets killed, the relevant PVC is deleted.
+
+
+Forward VNC port to make it accessible from remote VNC viewer:
 ```console
-$ vncviewer viewer localhost:5900
+$ export POD_NAME=$(kubectl get pod --namespace kubedoom -l "app=kubedoom" -o jsonpath="{.items[0].metadata.name}")
+$ kubectl --namespace kubedoom port-forward --address 0.0.0.0 $POD_NAME 5901:5900
 ```
 
-Kubedoom requires a service account with permissions to list all pods and delete
-them and uses kubectl 1.19.2.
+
+To connect run:
+```console
+$ vncviewer viewer <workernode>:5901
+```
+
+VNC password is `idbehold`
+
+You should now see DOOM! Now if you want to get the job done quickly enter the
+cheat `idspispopd` and walk through the wall on your right. You should be
+greeted by your pvcs as little pink monsters. Press `CTRL` to fire. Get the God mode on 
+with `iddqd` and full weapon with `idkfa`. If you have many PVCs press `5` to get the right weapon for the job
+Pause the game with `ESC`.

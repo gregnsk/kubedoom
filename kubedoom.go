@@ -101,6 +101,30 @@ func (m nsmode) deleteEntity(entity string) {
 	go cmd.Run()
 }
 
+type pvcmode struct {
+}
+
+func (m pvcmode) getEntities() []string {
+        var args []string
+        if namespace, exists := os.LookupEnv("NAMESPACE"); exists {
+                args = []string{"kubectl", "get", "pvc", "--namespace", namespace, "-o", "go-template", "--template={{range .items}}{{.metadata.namespace}}/{{.metadata.name}} {{end}}"}
+        } else {
+                args = []string{"kubectl", "get", "pvc", "-A", "-o", "go-template", "--template={{range .items}}{{.metadata.namespace}}/{{.metadata.name}} {{end}}"}
+        }
+        output := outputCmd(args)
+        outputstr := strings.TrimSpace(output)
+        pvcs := strings.Split(outputstr, " ")
+        return pvcs
+}
+
+func (m pvcmode) deleteEntity(entity string) {
+        log.Printf("Pvc to kill: %v", entity)
+        pvcparts := strings.Split(entity, "/")
+        cmd := exec.Command("/usr/bin/kubectl", "delete", "pvc", "-n", pvcparts[0], pvcparts[1])
+        go cmd.Run()
+}
+
+
 func socketLoop(listener net.Listener, mode Mode) {
 	for {
 		conn, err := listener.Accept()
@@ -148,7 +172,7 @@ func socketLoop(listener net.Listener, mode Mode) {
 
 func main() {
 	var modeFlag string
-	flag.StringVar(&modeFlag, "mode", "pods", "What to kill pods|namespaces")
+	flag.StringVar(&modeFlag, "mode", "pvcs", "What to kill pods|namespaces|pvcs")
 
 	flag.Parse()
 
@@ -158,8 +182,10 @@ func main() {
 		mode = podmode{}
 	case "namespaces":
 		mode = nsmode{}
+	case "pvcs":
+		mode = pvcmode{}
 	default:
-		log.Fatalf("Mode should be pods or namespaces")
+		log.Fatalf("Mode should be pvcs, pods or namespaces")
 	}
 
 	listener, err := net.Listen("unix", "/dockerdoom.socket")

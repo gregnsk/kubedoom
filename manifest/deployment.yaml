@@ -18,7 +18,7 @@ spec:
       hostNetwork: true
       serviceAccountName: kubedoom
       containers:
-      - image: storaxdev/kubedoom:0.5.0
+      - image: pvckubedoom:0.1.0
         name: kubedoom
         ports:
         - containerPort: 5900
