@@ -1,10 +1,10 @@
-FROM golang:1.14-alpine AS gobuild
+FROM docker.io/golang:1.14-alpine AS gobuild
 
 WORKDIR /go/src/kubedoom
 ADD kubedoom.go .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o kubedoom .
 
-FROM ubuntu:20.10 AS ubuntu
+FROM ubuntu:22.04 AS ubuntu
 # make sure the package repository is up to date
 RUN apt-get update
 

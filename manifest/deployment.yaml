@@ -18,7 +18,8 @@ spec:
       hostNetwork: true
       serviceAccountName: kubedoom
       containers:
-      - image: pvckubedoom:0.1.0
+      - image: localhost:5000/pvckubedoom:0.1.0
+        imagePullPolicy: IfNotPresent
         name: kubedoom
         ports:
         - containerPort: 5900

@@ -13,9 +13,21 @@ slightly modified Doom, which was forked from psdoom.
 
 ### Building kubedoom container image
 ```console
-$ git clone git@github.com:gregnsk/kubedoom.git
-$ cd kubedoom
-$ docker build -t pvckubedoom:0.1.0 .
+git clone git@github.com:gregnsk/kubedoom.git
+cd kubedoom
+podman build -t pvckubedoom:0.1.0 .
+```
+
+#### You may need to configure podman to use an insecure registry:
+a. Edit or create the registries.conf file which is usually located at /etc/containers/registries.conf.
+b. Add your registry to the [registries.insecure] block. If this block doesn't exist, create it. Here's an example of what you might add:
+[registries.insecure]
+registries = ['localhost:5000']
+
+### Push the image to the local repository
+```console
+podman tag localhost/pvckubedoom:0.1.0 localhost:5000/pvckubedoom:0.1.0
+podman push localhost:5000/pvckubedoom:0.1.0
 ```
 
 ### Running Kubedoom inside Kubernetes
@@ -25,7 +37,7 @@ Run kubedoom inside the cluster by applying the manifest
 provided in this repository:
 
 ```console
-$ kubectl apply -k manifest/
+kubectl apply -k manifest/
 namespace/kubedoom created
 deployment.apps/kubedoom created
 serviceaccount/kubedoom created
@@ -38,14 +50,14 @@ For every PVC in this namespace it will spawn a demon. When a demon gets killed,
 
 Forward VNC port to make it accessible from remote VNC viewer:
 ```console
-$ export POD_NAME=$(kubectl get pod --namespace kubedoom -l "app=kubedoom" -o jsonpath="{.items[0].metadata.name}")
-$ kubectl --namespace kubedoom port-forward --address 0.0.0.0 $POD_NAME 5901:5900
+export POD_NAME=$(kubectl get pod --namespace kubedoom -l "app=kubedoom" -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace kubedoom port-forward --address 0.0.0.0 $POD_NAME 5901:5900
 ```
 
 
 To connect run:
 ```console
-$ vncviewer viewer <workernode>:5901
+vncviewer viewer <workernode>:5901
 ```
 
 VNC password is `idbehold`
